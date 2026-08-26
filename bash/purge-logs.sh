@@ -1,4 +1,4 @@
-*#!/bin/bash
+#!/bin/bash
 # ------------------------------------------------------------
 # purge-logs.sh
 # Objet    : supprime les fichiers de log de plus de N jours dans un dossier
@@ -10,6 +10,8 @@
 # ------------------------------------------------------------
 
 FICHIER_LOG="/tmp/purge-logs.log"
+
+
 
 log() {
     echo "[$(date '+%Y-%m-%d %H:%M:%S')] $1" >> "$FICHIER_LOG"
@@ -25,8 +27,9 @@ if [ "$#" -lt 1 ]; then
 fi
 
 
-DOSSIER="$1"  
-JOURS="${2:-30}"
+DOSSIER="$1"  		#Folder used to Purge Log
+JOURS="${2:-30}" 	# Number of days ²²²�
+DRY_RUN="${3:None}" 	# N default, for None, --dry-run option don't purge any files 
 
 # Le nombre de jours doit être un entier positif.
 # Si ce n'est pas le cas, la comparaison numérique échoue : on jette son
@@ -57,14 +60,22 @@ TAILLE=$(find "$DOSSIER" -type f -name "*.log" -mtime +"$JOURS" -exec du -ch {} 
 
 log "=== Démarrage : dossier=$DOSSIER, seuil=$JOURS jours ==="
 
-if [ "$NB" -eq 0 ]; then
+if [ "$DRY_RUN" == "--dry-run" ]; then 
+  REPORT="$NB file(s) to suppress BUT --dry-run actived THEN don't purge anythings"
+  echo "$REPORT"
+  log  "$REPORT"
+  log "=== Fin de la purge ==="
+  exit 4
+fi
+if [ "$NB" -eq 0  ]; then
     echo "Aucun fichier de plus de $JOURS jours dans $DOSSIER, rien à faire"
-   log "Aucun fichier à supprimer"
+   log "Aucun fichier à supprimer (option --dry-run: $DRY_RUN) "
+   
 else
     echo "$NB fichier(s) à supprimer :"
     find "$DOSSIER" -type f -name "*.log" -mtime +"$JOURS" -print
     log "$NB fichier(s) de plus de $JOURS jours supprimé(s)"
-    l
+    log "Taille: $TAILLE"
     find "$DOSSIER" -type f -name "*.log" -mtime +"$JOURS" -delete
 fi
 
